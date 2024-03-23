@@ -16,28 +16,21 @@ const Hell = function(config_){
             };
         };
     };
+
+    const _formFields = function(form_, fields_){
+        for (let f of fields_){
+            form_.addText(
+              f.title,
+              f.name
+            );
+        }
+    };
+
     const HellTableLayer = function(store_, db_){
         this.render = function(){
             return _hellTable.render();
         };
         this.update = async function(){
-            console.log(_db);
-            console.log(_layer);
-            console.log(_store);
-            console.log(_layer[_db]);
-            console.log(_store.name);
-            console.log(_layer[_db][_store.name]);
-            for (let i in _layer[_db]){
-                console.log("."+i+".");
-                console.log(_layer[_db][i]);
-
-            }
-            console.log(_layer[_db][_store.name]);
-            console.log(await _layer[
-                   _db
-                ][
-                   _store.name
-                ].db.getAll());
             _hellTable.data(
               await _layer[
                    _db
@@ -48,7 +41,6 @@ const Hell = function(config_){
         };
         const _db = db_.toString();
         const _store = store_;
-        console.log(store_);
         const _fields = store_.fields;
         const _hellTable = new hellTableClass();
         const _fieldBuilder = function(fields){
@@ -68,56 +60,48 @@ const Hell = function(config_){
 
     const HellFormAdd = function(store_, db_){
         this.render = function(){
-            return  _hellForm.render();
+            return  _form.render();
         };
         const _db = db_.toString();
         const _store = store_;
-        const _hellForm = new HellForm();
-        const _hellBuild = function(){
-            _hellForm.addTitle(
+        const _form = new HellForm();
+        const _dbl = _layer[_db][_store.name].db;
+        const _build = function(){
+            _form.addTitle(
               _store.title+' Add'
             );
-            for (let f of _store.fields){
-                _hellForm.addText(
-                  f.title,
-                  f.name
-                );
-            }
-            _hellForm.addSubmit(
+            _formFields(_form, _store.fields);
+            _form.addSubmit(
               'Add',
               'add',
               async function(){
-                 _layer[
-                   _db
-                ][
-                   _store.name
-                ].db.add(
-                   _hellForm.json()
+                 _dbl.add(
+                   _form.json()
                  );
                  _update();
               }
            );
         };
-        _hellBuild();
+        _build();
     };
 
     const HellIndexedDbLayer = function(store_, db_){
         this.add = function(data){
-            _db.add(
+            _dbs[_db].add(
               _name,
               data
             );
         };
         this.getAll = async function(){
             return new Promise((resolve) => {
-              return _db.getAll(
+              return _dbs[_db].getAll(
                 _name,
                 resolve
               )
             });
         };
         const _name = store_.name.toString();
-        const _db = db_;
+        const _db = db_.toString();
     };
 
     const Manager = function(){
@@ -131,18 +115,17 @@ const Hell = function(config_){
             _dbs[dbName] = new HellIndexedDb(db);
             _layer[dbName] = {};
             for (let store of db.stores){
-                 let col = {}
+                 let col = {forms:{}};
                  _layer[dbName][store.name] = col;
                  col.db = new HellIndexedDbLayer(
                    store,
-                   _dbs[dbName]
+                   dbName
                  );
                  col.table = new HellTableLayer(
                    store,
                    dbName
                    
                  );
-                 col.forms = {};
                  col.forms.add = new HellFormAdd(
                    store,
                    dbName
@@ -151,5 +134,6 @@ const Hell = function(config_){
         };
         _build();
     };
+
     const _manager = new Manager();
 }
