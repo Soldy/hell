@@ -1,3 +1,11 @@
+const funcString = function(in_){
+    const out = {func:"",size:0};
+    const peace = in_.replace(')','').split('(');
+    out.func = peace[0];
+    if(in_.length == 2)
+        out.size = peace[1];
+    return out;
+}
 const Hell = function(config_){
     this.formAdd = function(db, store){
         return _layer[db][store].forms.add;
@@ -8,6 +16,24 @@ const Hell = function(config_){
     const _config = config_;
     const _dbs = {};
     const _layer = {};
+    const selectMaker = function(form_, field_, db_){
+        form_.addSelect(
+          field_.title,
+          field_.name,
+          {}
+        );
+        (async function(){
+        let data = await db_.getAll(); 
+        let list = {};
+        for(let i of data)
+            list[i.id] = i[field_.field];
+        form_.updateSelect(
+          field_.name,
+          list
+        );
+        })()
+    }
+
     const _update = function(){
         for (let db of _config.databases){
             for (let store of db.stores){
@@ -17,12 +43,27 @@ const Hell = function(config_){
         };
     };
 
-    const _formFields = function(form_, fields_){
+    const _formFields = async function(form_, fields_){
         for (let f of fields_){
-            form_.addText(
-              f.title,
-              f.name
-            );
+            let func = funcString(f.type);
+            if(func.func === 'varchar'){
+                form_.addText(
+                  f.title,
+                  f.name
+                );
+            }else if(func.func === 'text'){
+                form_.addArea(
+                  f.title,
+                  f.name
+                );
+            } else if(func.func === 'foreign'){
+                selectMaker(
+                  form_,
+                  f,
+                  _layer[f.database][f.store].db
+                );
+                
+            }
         }
     };
 
@@ -66,11 +107,11 @@ const Hell = function(config_){
         const _store = store_;
         const _form = new HellForm();
         const _dbl = _layer[_db][_store.name].db;
-        const _build = function(){
+        const _build = async function(){
             _form.addTitle(
               _store.title+' Add'
             );
-            _formFields(_form, _store.fields);
+            await _formFields(_form, _store.fields);
             _form.addSubmit(
               'Add',
               'add',
@@ -110,7 +151,7 @@ const Hell = function(config_){
                 _buildDatabase(db);
             }
         };
-        const _buildDatabase = function(db){
+        const _buildDatabase = async function(db){
             const dbName = db.name;
             _dbs[dbName] = new HellIndexedDb(db);
             _layer[dbName] = {};
@@ -121,12 +162,15 @@ const Hell = function(config_){
                    store,
                    dbName
                  );
-                 col.table = new HellTableLayer(
+            }
+            for (let store of db.stores){
+                 _layer[dbName][store.name]
+                 .table = new HellTableLayer(
                    store,
                    dbName
-                   
                  );
-                 col.forms.add = new HellFormAdd(
+                 _layer[dbName][store.name]
+                 .forms.add = new HellFormAdd(
                    store,
                    dbName
                  );
