@@ -6,7 +6,7 @@ const funcString = function(in_){
         out.size = peace[1];
     return out;
 }
-const Hell = function(config_){
+const Hell = function(config_, target_){
     this.formAdd = function(db, store){
         return _layer[db][store].forms.add;
     };
@@ -16,6 +16,10 @@ const Hell = function(config_){
     const _config = config_;
     const _dbs = {};
     const _layer = {};
+    const _frames = new HellFrames();
+    const _menu = new HellMenu();
+    const _target = target_;
+    
     const selectMaker = function(form_, field_, db_){
         form_.addSelect(
           field_.title,
@@ -66,6 +70,38 @@ const Hell = function(config_){
             }
         }
     };
+    const HellPageLayer = function(store_, db_){
+        const _store = store_.name;
+        const _db = db_;
+        _frames
+        .add(
+          _store,
+          new HellFramePage(
+            (
+              _layer[_db][_store]
+              .forms.add.render()
+            ),
+            (
+              _layer[_db][_store]
+              .table.render()
+            )
+          )
+        );
+
+    };
+
+    const HellMenuLayer = function(store_, db_){
+        const _name = store_.name;
+        const _title = store_.title;
+        const _icon = store_.icon;
+        _menu.add(
+           _name,
+           _title,
+            function(){_frames.set(_name)},
+            _icon,
+            'main'
+        );
+    };
 
     const HellTableLayer = function(store_, db_){
         this.render = function(){
@@ -102,6 +138,9 @@ const Hell = function(config_){
     const HellFormAdd = function(store_, db_){
         this.render = function(){
             return  _form.render();
+        };
+        this.build = async function(){
+            await _build();
         };
         const _db = db_.toString();
         const _store = store_;
@@ -150,30 +189,41 @@ const Hell = function(config_){
             for (let db of _config.databases){
                 _buildDatabase(db);
             }
+            _frames.menu(
+              _menu.render()
+            );
+            console.log(_menu.render());
+            _target.appendChild(
+              _frames.render()
+            );
         };
         const _buildDatabase = async function(db){
-            const dbName = db.name;
-            _dbs[dbName] = new HellIndexedDb(db);
-            _layer[dbName] = {};
+            const db_name = db.name;
+            _dbs[db_name] = new HellIndexedDb(db);
+            _layer[db_name] = {};
             for (let store of db.stores){
                  let col = {forms:{}};
-                 _layer[dbName][store.name] = col;
+                 _layer[db_name][store.name] = col;
                  col.db = new HellIndexedDbLayer(
                    store,
-                   dbName
+                   db_name
                  );
             }
             for (let store of db.stores){
-                 _layer[dbName][store.name]
+                 _layer[db_name][store.name]
                  .table = new HellTableLayer(
                    store,
-                   dbName
+                   db_name
                  );
-                 _layer[dbName][store.name]
+                 _layer[db_name][store.name]
                  .forms.add = new HellFormAdd(
                    store,
-                   dbName
+                   db_name
                  );
+                 _layer[db_name][store.name]
+                 .menu = new HellMenuLayer(store, db_name);
+                 _layer[db_name][store.name]
+                 .page = new HellPageLayer(store, db_name);
             };
         };
         _build();
