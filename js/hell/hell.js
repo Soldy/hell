@@ -108,14 +108,31 @@ const Hell = function(config_, target_){
             return _hellTable.render();
         };
         this.update = async function(){
+            const full_data =  await _layer[
+                _db
+              ][
+                _store.name
+              ].db.getAll();
+            for (let i of _store.fields){
+                if (i.type === 'foreign'){
+                    let trans = await _layer[
+                      i.database
+                    ][
+                      i.store
+                    ].db.getAll();
+                    let dict = {};
+                    for (let t of trans){
+                        dict[t.id] = t[i.field];
+                    }
+                    for (let d of full_data){
+                        d[i.name] = dict[d[i.name]];
+                    }
+                }
+            }
             _hellTable.data(
-              await _layer[
-                   _db
-                ][
-                   _store.name
-                ].db.getAll()
+              full_data
             );
-        };
+         };
         const _db = db_.toString();
         const _store = store_;
         const _fields = store_.fields;
