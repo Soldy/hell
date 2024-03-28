@@ -114,6 +114,11 @@ const Hell = function(config_, target_){
                 _store.name
               ].db.getAll();
             for (let i of _store.fields){
+                if(
+                  (typeof i.table !== 'boolean')||
+                  (i.table === false)
+                )
+                    continue;
                 if (i.type === 'foreign'){
                     let trans = await _layer[
                       i.database
@@ -142,6 +147,11 @@ const Hell = function(config_, target_){
               'id':'ID'
             };
             for (let i of fields){
+                if(
+                  (typeof i.table !== 'boolean')||
+                  (i.table === false)
+                )
+                    continue;
                 out[i.name] = i.title;
             };
             return out;
