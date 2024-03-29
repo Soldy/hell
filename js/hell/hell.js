@@ -6,6 +6,7 @@ const funcString = function(in_){
         out.size = peace[1];
     return out;
 }
+
 const Hell = function(config_, target_){
     this.formAdd = function(db, store){
         return _layer[db][store].forms.add;
@@ -226,7 +227,14 @@ const Hell = function(config_, target_){
         };
         const _buildDatabase = async function(db){
             const db_name = db.name;
-            _dbs[db_name] = new HellIndexedDb(db);
+            if(
+              (typeof db.backup === 'boolean' ) &&
+              (db.backup === true )
+            ){
+                _dbs[db_name] = HellIndexedDbBackup(db);
+            } else {
+                _dbs[db_name] = new HellIndexedDb(db);
+            }
             _layer[db_name] = {};
             for (let store of db.stores){
                  let col = {forms:{}};
