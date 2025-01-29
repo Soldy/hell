@@ -1,12 +1,3 @@
-const funcString = function(in_){
-    const out = {func:"",size:0};
-    const peace = in_.replace(')','').split('(');
-    out.func = peace[0];
-    if(in_.length == 2)
-        out.size = peace[1];
-    return out;
-}
-
 const Hell = function(config_, target_){
     this.formAdd = function(db, store){
         return _layer[db][store].forms.add;
@@ -20,7 +11,14 @@ const Hell = function(config_, target_){
     const _frames = new HellFrames();
     const _menu = new HellMenu();
     const _target = target_;
-    
+    const _typeString = function(in_){
+        const out = {func:"",size:0};
+        const peace = in_.replace(')','').split('(');
+        out.func = peace[0];
+        if(in_.length == 2)
+            out.size = peace[1];
+        return out;
+    }
     const selectMaker = function(form_, field_, db_){
         form_.addSelect(
           field_.title,
@@ -50,7 +48,7 @@ const Hell = function(config_, target_){
 
     const _formFields = async function(form_, fields_){
         for (let f of fields_){
-            let func = funcString(f.type);
+            let func = _typeString(f.type);
             if(func.func === 'varchar'){
                 form_.addText(
                   f.title,
